@@ -35,10 +35,32 @@ export default function ProgressList({ teamId, items: initial }: { teamId: strin
     }
   }, [teamId])
 
+  useEffect(() => {
+    function onNew(e: any) {
+      const d = e.detail as ProgressItem
+      if (!d || !d.id) return
+      setItems((prev) => [d, ...prev.filter(p => p.id !== d.id)])
+    }
+    window.addEventListener('progress:new', onNew as EventListener)
+    return () => window.removeEventListener('progress:new', onNew as EventListener)
+  }, [])
+
+  function updateItem(updated: ProgressItem) {
+    setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+  }
+
+  function removeItem(id: string) {
+    setItems((prev) => prev.filter((p) => p.id !== id))
+  }
+
+  function addItem(newItem: ProgressItem) {
+    setItems((prev) => [newItem, ...prev])
+  }
+
   return (
     <div className="grid gap-3">
       {items.map((it) => (
-        <ProgressCard key={it.id} item={it} />
+        <ProgressCard key={it.id} item={it} onUpdated={updateItem} onDeleted={() => removeItem(it.id)} />
       ))}
     </div>
   )

@@ -28,17 +28,17 @@ export default async function TeamPage({ params }: { params: { team_slug: string
     ])
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto px-4">
         <header className="border-b pb-3">
-          <h1 className="text-2xl font-bold">{team.name} ダッシュボード</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{team.name} ダッシュボード</h1>
         </header>
         <section>
-          <h2 className="font-semibold mb-2">班の目標</h2>
+          <h2 className="font-semibold mb-2 text-zinc-900">班の目標</h2>
           <TeamGoalEditor teamId={team.id} goal={goal ?? undefined} />
         </section>
         <section className="grid md:grid-cols-3 gap-4">
           <div className="md:col-span-2 space-y-3">
-            <h2 className="font-semibold">メンバーの進捗</h2>
+            <h2 className="font-semibold text-zinc-900">メンバーの進捗</h2>
             <ProgressList teamId={team.id} items={(progresses as any[])?.map(p => ({
               id: p.id,
               author_name: p.author_name,
@@ -47,7 +47,7 @@ export default async function TeamPage({ params }: { params: { team_slug: string
             })) ?? []} />
           </div>
           <div>
-            <h2 className="font-semibold mb-2">新規進捗</h2>
+            <h2 className="font-semibold mb-2 text-zinc-900">新規進捗</h2>
             <ProgressForm teamId={team.id} />
           </div>
         </section>

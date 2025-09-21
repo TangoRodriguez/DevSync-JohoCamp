@@ -4,6 +4,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { Button } from '@/components/components/ui/button'
+import { Input } from '@/components/components/ui/input'
+import { Textarea } from '@/components/components/ui/textarea'
 
 export default function ProgressForm({ teamId }: { teamId: string }) {
   const [author, setAuthor] = useState('')
@@ -17,13 +20,17 @@ export default function ProgressForm({ teamId }: { teamId: string }) {
     setError(null)
     try {
       const supabase = getSupabaseClient()
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_progress')
         .insert([{ team_id: teamId, author_name: author, content, status: '未着手' }])
+        .select('id, author_name, content, status')
+        .single()
       if (error) throw error
-  setAuthor('')
-  setContent('')
-  router.refresh()
+      setAuthor('')
+      setContent('')
+      // Realtimeに加えて自分の画面でも確実に即時反映
+      const event = new CustomEvent('progress:new', { detail: { id: data.id, author_name: data.author_name, content: data.content, status: data.status } })
+      window.dispatchEvent(event)
     } catch (e: any) {
       setError(e?.message ?? '保存に失敗しました')
     } finally {
@@ -32,11 +39,17 @@ export default function ProgressForm({ teamId }: { teamId: string }) {
   }
 
   return (
-    <div className="border rounded p-4 space-y-3">
-      <input className="w-full border rounded px-3 py-2" placeholder="名前" value={author} onChange={(e) => setAuthor(e.target.value)} />
-      <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder="進捗目標" value={content} onChange={(e) => setContent(e.target.value)} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button disabled={saving || !author || !content} className="bg-black text-white rounded px-3 py-2 disabled:opacity-50" onClick={submit}>{saving ? '追加中…' : '追加'}</button>
+    <div className="border border-zinc-200 rounded-xl p-4 shadow-sm bg-white space-y-3">
+      <label className="block">
+        <span className="text-xs text-zinc-500">名前</span>
+        <Input className="mt-1" placeholder="名前" value={author} onChange={(e) => setAuthor(e.target.value)} />
+      </label>
+      <label className="block">
+        <span className="text-xs text-zinc-500">進捗目標</span>
+        <Textarea className="mt-1" rows={3} placeholder="進捗目標" value={content} onChange={(e) => setContent(e.target.value)} />
+      </label>
+      {error && <p className="text-sm text-rose-600">{error}</p>}
+      <Button disabled={saving || !author || !content} onClick={submit} size="sm">{saving ? '追加中…' : '追加'}</Button>
     </div>
   )
 }

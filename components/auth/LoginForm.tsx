@@ -19,16 +19,18 @@ export default function LoginForm() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password }),
     })
-    if (res.status === 303) {
-      // should redirect by Location header
-      window.location.href = res.headers.get('Location') || '/'
+    // サーバーがリダイレクトした場合（fetchが自動追従した場合も含む）
+    if (res.status === 303 || res.redirected) {
+      // res.url は最終URL（自動追従時）
+      window.location.href = res.url || from || '/'
       return
     }
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok || !data.ok) {
-      setError('パスワードが違います')
-    } else {
+    // JSONレスポンスパス（APIが200でok:trueを返すケース）
+    const data = await res.json().catch(() => ({} as any))
+    if (res.ok && data?.ok) {
       window.location.href = from || '/'
+    } else {
+      setError('パスワードが違います')
     }
     setLoading(false)
   }

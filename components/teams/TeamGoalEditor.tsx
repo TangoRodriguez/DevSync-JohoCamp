@@ -6,10 +6,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { Button } from '@/components/components/ui/button'
+import { Input } from '@/components/components/ui/input'
+import { Textarea } from '@/components/components/ui/textarea'
 
 export type TeamGoal = { id: string; title: string; description?: string | null }
 
 export default function TeamGoalEditor({ teamId, goal: initialGoal }: { teamId: string; goal?: TeamGoal | null }) {
+  const [goal, setGoal] = useState<TeamGoal | null>(initialGoal ?? null)
   const [editing, setEditing] = useState(!initialGoal)
   const [title, setTitle] = useState(initialGoal?.title ?? '')
   const [description, setDescription] = useState(initialGoal?.description ?? '')
@@ -20,51 +24,77 @@ export default function TeamGoalEditor({ teamId, goal: initialGoal }: { teamId: 
     setSaving(true)
     try {
       const supabase = getSupabaseClient()
-      if (initialGoal) {
-        const { error } = await supabase
+      if (goal) {
+        const { data, error } = await supabase
           .from('team_goals')
           .update({ title, description })
-          .eq('id', initialGoal.id)
+          .eq('id', goal.id)
+          .select('id, title, description')
+          .single()
         if (error) throw error
+        setGoal({ id: data.id, title: data.title, description: data.description })
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('team_goals')
           .insert([{ team_id: teamId, title, description }])
+          .select('id, title, description')
+          .single()
         if (error) throw error
+        setGoal({ id: data.id, title: data.title, description: data.description })
       }
       setEditing(false)
-      router.refresh()
     } finally {
       setSaving(false)
     }
   }
 
-  if (!editing && !initialGoal) {
+  async function onDelete() {
+    if (!goal) return
+    const ok = window.confirm('班の目標を削除しますか？')
+    if (!ok) return
+    const supabase = getSupabaseClient()
+    await supabase.from('team_goals').delete().eq('id', goal.id)
+    setGoal(null)
+    setTitle('')
+    setDescription('')
+    setEditing(false)
+  }
+
+  if (!editing && !goal) {
     return (
-      <div className="border rounded p-4">
-        <p className="text-gray-600 mb-2">班目標が未設定です。</p>
-        <button className="bg-black text-white rounded px-3 py-2" onClick={() => setEditing(true)}>目標を設定</button>
+      <div className="border border-zinc-200 rounded-xl p-4 shadow-sm bg-white">
+        <p className="text-zinc-600 mb-3">班目標が未設定です。</p>
+        <Button onClick={() => setEditing(true)} size="sm">目標を設定</Button>
       </div>
     )
   }
 
   if (!editing) {
     return (
-      <div className="border rounded p-4">
-        <h2 className="font-semibold text-lg">{initialGoal?.title}</h2>
-        {initialGoal?.description && <p className="text-gray-700 mt-1 whitespace-pre-wrap">{initialGoal.description}</p>}
-        <button className="mt-3 text-sm underline" onClick={() => setEditing(true)}>編集</button>
+      <div className="border border-zinc-200 rounded-xl p-4 shadow-sm bg-white">
+        <h2 className="font-semibold text-lg text-zinc-900">{goal?.title}</h2>
+        {goal?.description && <p className="text-zinc-700 mt-2 whitespace-pre-wrap leading-relaxed">{goal.description}</p>}
+        <div className="mt-4 flex gap-2 text-sm">
+          <Button variant="outline" size="sm" onClick={() => { setTitle(goal?.title ?? ''); setDescription(goal?.description ?? ''); setEditing(true) }}>編集</Button>
+          <Button variant="destructive" size="sm" onClick={onDelete}>削除</Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="border rounded p-4 space-y-3">
-      <input className="w-full border rounded px-3 py-2" placeholder="目標タイトル" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <textarea className="w-full border rounded px-3 py-2" rows={4} placeholder="詳細" value={description} onChange={(e) => setDescription(e.target.value)} />
+    <div className="border border-zinc-200 rounded-xl p-4 shadow-sm bg-white space-y-3">
+      <label className="block">
+        <span className="text-xs text-zinc-500">目標タイトル</span>
+        <Input className="mt-1" placeholder="目標タイトル" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </label>
+      <label className="block">
+        <span className="text-xs text-zinc-500">詳細</span>
+        <Textarea className="mt-1" rows={4} placeholder="詳細" value={description} onChange={(e) => setDescription(e.target.value)} />
+      </label>
       <div className="flex gap-2">
-        <button disabled={saving} className="bg-black text-white rounded px-3 py-2" onClick={save}>{saving ? '保存中…' : '保存'}</button>
-        <button className="border rounded px-3 py-2" onClick={() => setEditing(false)}>キャンセル</button>
+        <Button disabled={saving} onClick={save} size="sm">{saving ? '保存中…' : '保存'}</Button>
+        <Button variant="outline" size="sm" onClick={() => setEditing(false)}>キャンセル</Button>
       </div>
     </div>
   )
