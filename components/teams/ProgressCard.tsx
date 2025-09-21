@@ -14,6 +14,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/components/ui/dropdown-menu'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/components/ui/alert-dialog'
 
 export type ProgressItem = {
   id: string
@@ -43,8 +54,6 @@ export default function ProgressCard({ item, onUpdated, onDeleted }: { item: Pro
   }
 
   async function onDelete() {
-    const ok = window.confirm('この進捗を削除しますか？')
-    if (!ok) return
     setDeleting(true)
     try {
       const { error } = await supabase.from('user_progress').delete().eq('id', item.id)
@@ -123,7 +132,23 @@ export default function ProgressCard({ item, onUpdated, onDeleted }: { item: Pro
           <p className="mt-2 whitespace-pre-wrap leading-relaxed text-zinc-700">{item.content}</p>
           <div className="mt-3 flex gap-2 text-sm">
             <Button type="button" variant="outline" onClick={() => { setAuthor(item.author_name); setContent(item.content); setEditing(true) }} aria-label="編集">編集</Button>
-            <Button type="button" variant="destructive" onClick={onDelete} aria-label="削除" disabled={deleting}>{deleting ? '削除中…' : '削除'}</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" aria-label="削除" disabled={deleting}>{deleting ? '削除中…' : '削除'}</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>進捗を削除しますか？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    この操作は取り消せません。{item.author_name} さんの進捗が完全に削除されます。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>削除する</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </>
       )}

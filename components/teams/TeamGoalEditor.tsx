@@ -10,6 +10,17 @@ import { Button } from '@/components/components/ui/button'
 import { Input } from '@/components/components/ui/input'
 import { Textarea } from '@/components/components/ui/textarea'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/components/ui/alert-dialog'
 
 export type TeamGoal = { id: string; title: string; description?: string | null }
 
@@ -51,8 +62,6 @@ export default function TeamGoalEditor({ teamId, goal: initialGoal }: { teamId: 
 
   async function onDelete() {
     if (!goal) return
-    const ok = window.confirm('班の目標を削除しますか？')
-    if (!ok) return
     const supabase = getSupabaseClient()
     try {
       const { error } = await supabase.from('team_goals').delete().eq('id', goal.id)
@@ -86,7 +95,23 @@ export default function TeamGoalEditor({ teamId, goal: initialGoal }: { teamId: 
         {goal?.description && <p className="text-zinc-700 mt-2 whitespace-pre-wrap leading-relaxed">{goal.description}</p>}
         <div className="mt-4 flex gap-2 text-sm">
           <Button variant="outline" size="sm" onClick={() => { setTitle(goal?.title ?? ''); setDescription(goal?.description ?? ''); setEditing(true) }}>編集</Button>
-          <Button variant="destructive" size="sm" onClick={onDelete}>削除</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">削除</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>班の目標を削除しますか？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  この操作は取り消せません。班の目標が完全に削除されます。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>削除する</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     )
