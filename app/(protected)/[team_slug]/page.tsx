@@ -16,8 +16,8 @@ export default async function TeamPage({ params }: { params: { team_slug: string
     if (!team) {
       return (
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">{team_slug}</h1>
-          <p className="text-gray-600">対象の班が見つかりません。</p>
+          <h1 className="text-2xl font-bold mb-4">{team_slug.toUpperCase()} ダッシュボード</h1>
+          <p className="text-gray-600">対象の班がまだDBに作成されていません。トップに戻って班を選択するか、管理者が作成してください。</p>
         </div>
       )
     }
