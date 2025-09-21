@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/components/ui/dropdown-menu'
+import { toast } from 'sonner'
 
 export type ProgressItem = {
   id: string
@@ -27,6 +28,7 @@ export default function ProgressCard({ item, onUpdated, onDeleted }: { item: Pro
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(item.content)
   const [author, setAuthor] = useState(item.author_name)
+  const [deleting, setDeleting] = useState(false)
 
   async function updateStatus(status: ProgressItem['status']) {
     const { data, error } = await supabase
@@ -43,8 +45,18 @@ export default function ProgressCard({ item, onUpdated, onDeleted }: { item: Pro
   async function onDelete() {
     const ok = window.confirm('この進捗を削除しますか？')
     if (!ok) return
-    await supabase.from('user_progress').delete().eq('id', item.id)
-    onDeleted?.()
+    setDeleting(true)
+    try {
+      const { error } = await supabase.from('user_progress').delete().eq('id', item.id)
+      if (error) {
+        toast.error('削除に失敗しました', { description: error.message })
+        return
+      }
+      onDeleted?.()
+      toast.success('削除しました')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const statusBgClass =
@@ -111,7 +123,7 @@ export default function ProgressCard({ item, onUpdated, onDeleted }: { item: Pro
           <p className="mt-2 whitespace-pre-wrap leading-relaxed text-zinc-700">{item.content}</p>
           <div className="mt-3 flex gap-2 text-sm">
             <Button type="button" variant="outline" onClick={() => { setAuthor(item.author_name); setContent(item.content); setEditing(true) }} aria-label="編集">編集</Button>
-            <Button type="button" variant="destructive" onClick={onDelete} aria-label="削除">削除</Button>
+            <Button type="button" variant="destructive" onClick={onDelete} aria-label="削除" disabled={deleting}>{deleting ? '削除中…' : '削除'}</Button>
           </div>
         </>
       )}

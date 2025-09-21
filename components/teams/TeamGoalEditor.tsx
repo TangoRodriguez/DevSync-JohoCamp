@@ -9,6 +9,7 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { Button } from '@/components/components/ui/button'
 import { Input } from '@/components/components/ui/input'
 import { Textarea } from '@/components/components/ui/textarea'
+import { toast } from 'sonner'
 
 export type TeamGoal = { id: string; title: string; description?: string | null }
 
@@ -53,11 +54,20 @@ export default function TeamGoalEditor({ teamId, goal: initialGoal }: { teamId: 
     const ok = window.confirm('班の目標を削除しますか？')
     if (!ok) return
     const supabase = getSupabaseClient()
-    await supabase.from('team_goals').delete().eq('id', goal.id)
-    setGoal(null)
-    setTitle('')
-    setDescription('')
-    setEditing(false)
+    try {
+      const { error } = await supabase.from('team_goals').delete().eq('id', goal.id)
+      if (error) {
+        toast.error('削除に失敗しました', { description: error.message })
+        return
+      }
+      setGoal(null)
+      setTitle('')
+      setDescription('')
+      setEditing(false)
+      toast.success('削除しました')
+    } catch (e: any) {
+      toast.error('削除に失敗しました')
+    }
   }
 
   if (!editing && !goal) {
